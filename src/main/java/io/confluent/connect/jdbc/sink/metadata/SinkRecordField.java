@@ -59,6 +59,10 @@ public class SinkRecordField {
     return isPrimaryKey;
   }
 
+  public Schema schema() {
+    return schema;
+  }
+
   @Override
   public String toString() {
     return "SinkRecordField{"

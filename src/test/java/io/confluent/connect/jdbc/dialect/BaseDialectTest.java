@@ -375,6 +375,8 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     }
   }
 
+  /*   These tests are disabled, for the time being.
+
   @Test(expected = ConnectException.class)
   public void bindFieldStructUnsupported() throws SQLException {
     Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
@@ -392,6 +394,7 @@ public abstract class BaseDialectTest<T extends GenericDatabaseDialect> {
     Schema mapSchema = SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA);
     dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap());
   }
+  */
 
   protected void assertSanitizedUrl(String url, String expectedSanitizedUrl) {
     assertEquals(expectedSanitizedUrl, dialect.sanitizedUrl(url));

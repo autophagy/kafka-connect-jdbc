@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.confluent</groupId>
         <artifactId>common</artifactId>
-        <version>5.4.0-SNAPSHOT</version>
+        <version>5.1.3</version>
     </parent>
 
     <groupId>io.confluent</groupId>
@@ -60,6 +60,7 @@
         <kafka.connect.maven.plugin.version>0.11.1</kafka.connect.maven.plugin.version>
         <sqlite-jdbc.version>3.25.2</sqlite-jdbc.version>
         <postgresql.version>9.4-1206-jdbc41</postgresql.version>
+        <cratedb.version>2.5.1</cratedb.version>
         <jtds.driver.version>1.3.1</jtds.driver.version>
         <licenses.name>Confluent Community License</licenses.name>
         <licenses.version>${project.version}</licenses.version>
@@ -73,6 +74,23 @@
             <id>confluent</id>
             <name>Confluent</name>
             <url>${confluent.maven.repo}</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray</id>
+            <name>bintray</name>
+            <url>http://dl.bintray.com/crate/crate</url>
+        </repository>
+        <repository>
+          <id>central</id>
+          <name>Central Repository</name>
+          <url>https://repo.maven.apache.org/maven2</url>
+          <layout>default</layout>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
         </repository>
     </repositories>
 
@@ -94,6 +112,12 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.crate</groupId>
+            <artifactId>crate-jdbc</artifactId>
+            <version>${cratedb.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -211,6 +235,7 @@
                                 <tag>sql</tag>
                                 <tag>mysql</tag>
                                 <tag>postgresql</tag>
+                                <tag>cratedb</tag>
                                 <tag>oracle</tag>
                                 <tag>sql server</tag>
                                 <tag>db2</tag>

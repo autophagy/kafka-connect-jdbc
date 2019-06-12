@@ -26,16 +26,17 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class CrateDatabaseDialectTest extends BaseDialectTest<CrateDatabaseDialect> {
 
   @Override
   protected CrateDatabaseDialect createDialect() {
-    return new CrateDatabaseDialect(sourceConfigWithUrl("jdbc:crate://something"));
+    return new CrateDatabaseDialect(sourceConfigWithUrl("jdbc:crate://something/"));
   }
 
   @Test
@@ -344,6 +345,43 @@ public class CrateDatabaseDialectTest extends BaseDialectTest<CrateDatabaseDiale
   @Override
   @Test
   public void bindFieldMapUnsupported() {}
+
+  @Test
+  public void bindFieldStructSupported() throws SQLException {
+    Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
+    Struct struct = new Struct(structSchema);
+    struct.put("test", true);
+
+    PreparedStatement stmt = mock(PreparedStatement.class);
+    dialect.bindField(stmt, 1, structSchema, struct);
+
+    HashMap<String, Object> map = new HashMap<>();
+    map.put("test", true);
+    verify(stmt, times(1)).setObject(1, map);
+  }
+
+  @Test
+  public void bindFieldMapSupported() throws SQLException {
+    Schema mapSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT8_SCHEMA);
+    HashMap<String, Integer> map = new HashMap<>();
+    map.put("the meaning of life", 42);
+
+    PreparedStatement stmt = mock(PreparedStatement.class);
+    dialect.bindField(stmt, 1, mapSchema, map);
+
+    verify(stmt, times(1)).setObject(1, map);
+  }
+
+  @Test
+  public void bindFieldArraySupported() throws SQLException {
+    Schema arraySchema = SchemaBuilder.array(Schema.INT8_SCHEMA);
+    List<Integer> list = new ArrayList<>(Arrays.asList(1, 2, 3));
+
+    PreparedStatement stmt = mock(PreparedStatement.class);
+    dialect.bindField(stmt, 1, arraySchema, list);
+
+    verify(stmt, times(1)).setArray(1, stmt.getConnection().createArrayOf("SHORT", list.toArray()));
+  }
 }
 
 

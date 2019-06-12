@@ -20,6 +20,7 @@ import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -29,6 +30,7 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Arrays;
@@ -57,6 +59,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseDialect> {
 
@@ -421,5 +424,23 @@ public class GenericDatabaseDialectTest extends BaseDialectTest<GenericDatabaseD
         "jdbc:acme:db/foo:100?password=****&key1=value1&key2=value2&key3=value3&"
         + "user=smith&password=****&other=value"
     );
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldStructUnsupported() throws SQLException {
+    Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
+    dialect.bindField(mock(PreparedStatement.class), 1, structSchema, new Struct(structSchema));
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldArrayUnsupported() throws SQLException {
+    Schema arraySchema = SchemaBuilder.array(Schema.INT8_SCHEMA);
+    dialect.bindField(mock(PreparedStatement.class), 1, arraySchema, Collections.emptyList());
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldMapUnsupported() throws SQLException {
+    Schema mapSchema = SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA);
+    dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap());
   }
 }

@@ -19,10 +19,16 @@ import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Test;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 
 import io.confluent.connect.jdbc.util.QuoteMethod;
@@ -30,6 +36,7 @@ import io.confluent.connect.jdbc.util.TableId;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
 
 public class Db2DatabaseDialectTest extends BaseDialectTest<Db2DatabaseDialect> {
 
@@ -361,5 +368,23 @@ public class Db2DatabaseDialectTest extends BaseDialectTest<Db2DatabaseDialect> 
   @Test
   public void testCheckConnectionQuery() {
     assertFalse(dialect.checkConnectionQuery().contains(";"));
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldStructUnsupported() throws SQLException {
+    Schema structSchema = SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA).build();
+    dialect.bindField(mock(PreparedStatement.class), 1, structSchema, new Struct(structSchema));
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldArrayUnsupported() throws SQLException {
+    Schema arraySchema = SchemaBuilder.array(Schema.INT8_SCHEMA);
+    dialect.bindField(mock(PreparedStatement.class), 1, arraySchema, Collections.emptyList());
+  }
+
+  @Test(expected = ConnectException.class)
+  public void bindFieldMapUnsupported() throws SQLException {
+    Schema mapSchema = SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA);
+    dialect.bindField(mock(PreparedStatement.class), 1, mapSchema, Collections.emptyMap());
   }
 }

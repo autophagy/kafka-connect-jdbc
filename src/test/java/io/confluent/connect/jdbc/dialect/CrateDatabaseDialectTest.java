@@ -49,6 +49,8 @@ public class CrateDatabaseDialectTest extends BaseDialectTest<CrateDatabaseDiale
     assertPrimitiveMapping(Type.BOOLEAN, "BOOLEAN");
     assertPrimitiveMapping(Type.BYTES, "BYTE");
     assertPrimitiveMapping(Type.STRING, "STRING");
+    assertPrimitiveMapping(Type.MAP, "OBJECT(DYNAMIC)");
+    assertPrimitiveMapping(Type.STRUCT, "OBJECT(STRICT) as ()");
   }
 
   @Test
@@ -56,6 +58,7 @@ public class CrateDatabaseDialectTest extends BaseDialectTest<CrateDatabaseDiale
     assertStructuredMapping(SchemaBuilder.struct().field("test", Schema.BOOLEAN_SCHEMA), Type.STRUCT, "OBJECT(STRICT) as (test BOOLEAN)");
     assertStructuredMapping(SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA), Type.MAP,"OBJECT(DYNAMIC)");
     assertStructuredMapping(SchemaBuilder.array(Schema.INT32_SCHEMA), Type.ARRAY, "ARRAY(INTEGER)");
+    assertStructuredMapping(SchemaBuilder.struct().field("test", SchemaBuilder.struct().field("test", Schema.STRING_SCHEMA)), Type.STRUCT, "OBJECT(STRICT) as (test OBJECT(STRICT) as (test STRING))");
   }
 
   private void assertStructuredMapping(SchemaBuilder schemaBuilder, Schema.Type expectedType, String expectedSqlType) {
@@ -330,6 +333,17 @@ public class CrateDatabaseDialectTest extends BaseDialectTest<CrateDatabaseDiale
     );
   }
 
+  @Override
+  @Test
+  public void bindFieldStructUnsupported() {}
+
+  @Override
+  @Test
+  public void bindFieldArrayUnsupported() {}
+
+  @Override
+  @Test
+  public void bindFieldMapUnsupported() {}
 }
 
 

@@ -20,16 +20,26 @@ import io.confluent.connect.jdbc.util.QuoteMethod;
 import io.confluent.connect.jdbc.util.TableId;
 import org.apache.kafka.connect.data.*;
 import org.apache.kafka.connect.data.Schema.Type;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
+import java.sql.Array;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class CrateDatabaseDialectTest extends BaseDialectTest<CrateDatabaseDialect> {
 
@@ -328,6 +338,57 @@ public class CrateDatabaseDialectTest extends BaseDialectTest<CrateDatabaseDiale
         "jdbc:crate://localhost/test?user=fred&password=secret&ssl=true",
         "jdbc:crate://localhost/test?user=fred&password=****&ssl=true"
     );
+  }
+
+  @Test
+  public void bindFieldStructSupported() throws SQLException {
+    Schema substructSchema = SchemaBuilder.struct().field("sub_a", Schema.STRING_SCHEMA).build();
+    Schema structSchema = SchemaBuilder.struct()
+        .field("test", Schema.BOOLEAN_SCHEMA)
+        .field("substruct", substructSchema)
+        .build();
+    Struct struct = new Struct(structSchema);
+    struct.put("test", true);
+    struct.put("substruct", new Struct(substructSchema).put("sub_a", "Hello, World!"));
+    struct.validate();
+
+    HashMap<String, Object> expectedMap = new HashMap<>();
+    HashMap<String, Object> expectedSubMap = new HashMap<>();
+    expectedSubMap.put("sub_a", "Hello, World!");
+    expectedMap.put("test", true);
+    expectedMap.put("substruct", expectedSubMap);
+
+    PreparedStatement preparedStatement = mock(PreparedStatement.class);
+    dialect.bindField(preparedStatement, 1, structSchema, struct);
+    verify(preparedStatement, times(1)).setObject(1, expectedMap);
+  }
+
+  @Test
+  public void bindFieldArraySupported() throws SQLException {
+    Schema arraySchema = SchemaBuilder.array(Schema.INT8_SCHEMA);
+    List<Integer> integers = new ArrayList<>(Arrays.asList(1, 1, 2, 3, 5, 8));
+
+    PreparedStatement preparedStatement = mock(PreparedStatement.class);
+    Array array = mock(Array.class);
+    Connection connection = mock(Connection.class);
+    Mockito.when(preparedStatement.getConnection()).thenReturn(connection);
+    Mockito.when(connection.createArrayOf("short", integers.toArray())).thenReturn(array);
+
+    dialect.bindField(preparedStatement, 1, arraySchema, integers);
+    verify(connection, times(1)).createArrayOf("short", integers.toArray());
+    verify(preparedStatement, times(1)).setArray(1, array);
+  }
+
+  @Test
+  public void bindFieldMapSupported() throws SQLException {
+    Schema mapSchema = SchemaBuilder.map(Schema.INT8_SCHEMA, Schema.INT8_SCHEMA);
+
+    HashMap<String, Object> expectedMap = new HashMap<>();
+    expectedMap.put("field_a", 1);
+    expectedMap.put("field_b", 9);
+    PreparedStatement preparedStatement = mock(PreparedStatement.class);
+    dialect.bindField(preparedStatement, 1, mapSchema, expectedMap);
+    verify(preparedStatement, times(1)).setObject(1, expectedMap);
   }
 
 }
